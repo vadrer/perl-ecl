@@ -1,9 +1,15 @@
 Revision history for Perl extension Language::Lisp::ECLs.
 
-0.26  Sun Jun XX  2008
+0.27  Sun Jun 14  2008
+	- ...::Ratio
+	- ...::Bignum
+	- eval_string now eval
+
+0.26  Sun Jun 13  2008
 	- better Makefile.PL
 	- better stringifications
 	- ...::HashTable for (make-hash-table)
+	- ...::Char
 
 0.25  Sun Jun 04  2008
 	- tie-ing of Language::Lisp::ECLs::List
