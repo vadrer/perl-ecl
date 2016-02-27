@@ -1,5 +1,5 @@
-Language-Lisp-ECL version 0.24
-==============================
+Language-Lisp-ECL
+=================
 
 ECL lisp to perl binding.
 Other lisps (SBCL, CLISP) are not embeddable and could be used from perl
@@ -10,7 +10,7 @@ Largerly unfinished but usable.
 
 INSTALLATION
 
-To install this module type the following:
+To install this module:
 
    perl Makefile.PL
    make
@@ -19,12 +19,12 @@ To install this module type the following:
 
 DEPENDENCIES
 
-"ecl-config" command should be in path at moment of invoking of Makefile.PL
+"ecl-config" command should be in path at moment of running Makefile.PL,
 which tells path to INC and LIBs
 
 COPYRIGHT AND LICENCE
 
-Copyright (C) 2008 by Vadim KONOVALOV
+Copyright (C) 2008 by Vadim Konovalov.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.004 or,
