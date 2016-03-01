@@ -1,6 +1,6 @@
 use strict;
 use blib;
-use Language::Lisp::ECLs;
+use ecl;
 use Tcl::Tk;
 
 my $int = new Tcl::Tk;
@@ -13,7 +13,7 @@ pack [text .t] -side top -fill x -expand 0
 EOS
 my $t = $int->widget('.t','Text');
 
-my $cl = new Language::Lisp::ECLs;
+my $cl = new ecl;
 
 $cl->eval_string(<<"EOS");
 (defun si::universal-error-handler (cformat eformat &rest args)
