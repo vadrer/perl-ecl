@@ -24,10 +24,10 @@ my $ecl_cflags = ecl_config("--cflags");
 my $ecl_ldflags = ecl_config("--ldflags");
 
 WriteMakefile(
-    NAME          => 'Language::Lisp::ECLs',
-    VERSION_FROM  => 'lib/Language/Lisp/ECLs.pm', # finds $VERSION
+    NAME          => 'ecl',
+    VERSION_FROM  => 'lib/ecl.pm', # finds $VERSION
     PREREQ_PM     => {}, # e.g., Module::Name => 1.1
-    ABSTRACT_FROM => 'lib/Language/Lisp/ECLs.pm', # retrieve abstract from module
+    ABSTRACT_FROM => 'lib/ecl.pm', # retrieve abstract from module
     AUTHOR        => 'Vadim Konovalov <vkon@cpan.org>',
     LIBS          => ["$ecl_ldflags"],
     # DEFINE        => '-DECL_UNICODE',

@@ -12,6 +12,6 @@ license: unknown
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
   version: '1.4'
-name: Language-Lisp-ECLs
+name: ecl
 requires: {}
-version: '0.21'
+version: '0.51'

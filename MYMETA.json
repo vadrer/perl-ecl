@@ -12,7 +12,7 @@
       "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
       "version" : "2"
    },
-   "name" : "Language-Lisp-ECLs",
+   "name" : "ecl",
    "prereqs" : {
       "build" : {
          "requires" : {
@@ -29,5 +29,5 @@
       }
    },
    "release_status" : "stable",
-   "version" : "0.21"
+   "version" : "0.51"
 }

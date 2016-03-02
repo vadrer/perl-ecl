@@ -1,10 +1,10 @@
 Changes
-ECLs.xs
+ecl.xs
 Makefile.PL
 MANIFEST
 try.p	
 README
 TODO
 t/Language-Lisp-ECLs.t
-lib/Language/Lisp/ECLs.pm
+lib/ecl.pm
 META.yml                                 Module meta-data (added by MakeMaker)

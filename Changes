@@ -1,4 +1,11 @@
-Revision history for Perl extension Language::Lisp::ECLs.
+Revision history for Perl extension ecl (former Language::Lisp::ECLs).
+
+0.59  mar-01 2016
+	- stringification
+
+0.58  mar-01 2016
+	- package name now much shorter - just ecl
+	- fix t_string
 
 0.27  Sun Jun 14  2008
 	- ...::Ratio

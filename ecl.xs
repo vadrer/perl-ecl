@@ -49,7 +49,7 @@ static SV*
 create_lisp_sv(pTHX_ const char *pkg_name, cl_object obj)
 {
     SV *sv = newSVpv((char*)&obj,4);
-    SV *rsv = newRV_noinc(aTHX_ sv); /* after this sv will have refcnt 1 (fortunately) */
+    SV *rsv = newRV_noinc(sv); /* after this sv will have refcnt 1 (fortunately) */
     create_lisp_on_sv(rsv, pkg_name);
     return rsv;
 }
@@ -59,11 +59,11 @@ create_lisp_av(pTHX_ const char *pkg_name, cl_object obj)
 {
     SV *sv = newSVpv((char*)&obj,4);
     AV *av = newAV();
-    SV *rsv = newRV_noinc(aTHX_ sv); /* after this sv will have refcnt 1 (fortunately) */
-    SV *rav = newRV_noinc(aTHX_ av); /* after this sv will have refcnt 1 (fortunately) */
+    SV *rsv = newRV_noinc(sv); /* after this sv will have refcnt 1 (fortunately) */
+    SV *rav = newRV_noinc(av); /* after this sv will have refcnt 1 (fortunately) */
     HV *phv = create_lisp_on_sv(rsv, pkg_name);
     /* have blessed reference, now TIE it! */
-    sv_magic(aTHX_ rsv,phv,PERL_MAGIC_tied,0,0);
+    sv_magic(rsv,phv,PERL_MAGIC_tied,0,0);
     return rav;
 }
 
@@ -178,7 +178,7 @@ cl2sv(pTHX_ cl_object clo)
 static cl_object
 generic_stringify(cl_object clo) {
     cl_object o, strm = ecl_make_string_output_stream(0,0);
-	fprintf(stderr,"generic_stringify\n");
+    /*fprintf(stderr,"generic_stringify\n");*/
     si_write_object(clo,strm);
     o = cl_get_output_stream_string(strm);
     ecl_dealloc(strm);
@@ -295,7 +295,7 @@ TIEARRAY(classname, obj)
 MODULE = ecl::Package		PACKAGE = ecl::Package		
 
 SV *
-stringify(clsv)
+stringify(clsv, ...)
         SV *clsv
     PREINIT:
         cl_object clo, np;
@@ -315,7 +315,7 @@ stringify(clsv)
 MODULE = ecl::Symbol		PACKAGE = ecl::Symbol		
 
 SV *
-stringify(clsv)
+stringify(clsv, ...)
         SV *clsv
     PREINIT:
         cl_object clo, n, p, np;
@@ -338,7 +338,7 @@ stringify(clsv)
 MODULE = ecl::Char		PACKAGE = ecl::Char		
 
 SV *
-stringify(clsv)
+stringify(clsv, ...)
         SV *clsv
     PREINIT:
         cl_object clo;
@@ -370,7 +370,7 @@ stringify0(clsv)
     	RETVAL
 
 SV *
-stringify(clsv)
+stringify(clsv, ...)
         SV *clsv
     PREINIT:
         cl_object clo;
@@ -390,11 +390,12 @@ stringify(clsv)
 MODULE = ecl::Ratio		PACKAGE = ecl::Ratio		
 
 SV *
-stringify(clsv)
+stringify(clsv, ...)
         SV *clsv
     PREINIT:
         cl_object clo;
     CODE:
+	/* fprintf(stderr,"ratio stringify\n"); */
         clo = sv2cl(clsv);
 	if (type_of(clo) == t_ratio) {
 	    SV *den = cl2sv(aTHX_ clo->ratio.den);
@@ -438,7 +439,7 @@ stringify(clsv)
 MODULE = ecl::HashTable		PACKAGE = ecl::HashTable		
 
 SV *
-stringify(clsv)
+stringify(clsv, ...)
         SV *clsv
     PREINIT:
         cl_object clo, n, p, np;
@@ -630,8 +631,7 @@ funcall(self, ...)
 	    RETVAL = cl2sv(aTHX_ res);
 	    break;
 	default:
-	    fprintf(stderr, "items1=%d not supported\n",items1);
-	    croak("items %d not supported - wtf");
+	    croak("items %d not supported - wtf", items);
 	}
     OUTPUT:
     	RETVAL
@@ -639,7 +639,7 @@ funcall(self, ...)
 MODULE = ecl::String		PACKAGE = ecl::String		
 
 SV *
-stringify(clsv)
+stringify(clsv, ...)
         SV *clsv
     PREINIT:
         cl_object clo;
@@ -656,7 +656,7 @@ stringify(clsv)
 MODULE = ecl::Generic		PACKAGE = ecl::Generic		
 
 SV *
-stringify(clsv)
+stringify(clsv, ...)
         SV *clsv
     PREINIT:
 	char *types[] = {
@@ -872,8 +872,7 @@ funcall(self,lispobj, ...)
 	    RETVAL = cl2sv(aTHX_ res);
 	    break;
 	default:
-	    fprintf(stderr, "items=%d not supported\n",items);
-	    croak("nitems %d not supported - wtf");
+	    croak("nitems %d not supported - wtf", items);
 	}
     OUTPUT:
     	RETVAL

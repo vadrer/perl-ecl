@@ -3,14 +3,15 @@
 
 #########################
 
+BEGIN{$ENV{PERL_DL_NONLAZY}=0}# Temporary  fix:) oh, don't ask why....  
 # change 'tests => 1' to 'tests => last_test_to_print';
 
 use Test::More ('no_plan'); # tests => 30?;
-BEGIN { use_ok('Language::Lisp::ECLs') };
+BEGIN { use_ok('ecl') };
 
 #########################
 
-my $cl = new Language::Lisp::ECLs;
+my $cl = new ecl;
 
 ok($cl->eval("(+ 1 2)")==3, '1+2=3');
 is($cl->eval("(format nil \"[~S]\" 'qwerty)"), '[QWERTY]');
@@ -20,6 +21,7 @@ is($cl->eval("(defpackage \"qw\")")->stringify, '#<PACKAGE qw>', 'package');
 
 my $lam = $cl->eval("(lambda (x y) (+ x y))");
 is($lam->funcall(40,2),42,'funcall');
+is(''.$lam,'#<CODE>');
 
 my $lamstr = $cl->eval("(lambda (name) (format nil \"hello mister ~A\" name))");
 is($lamstr->funcall("Twister"),"hello mister Twister",'funcall');

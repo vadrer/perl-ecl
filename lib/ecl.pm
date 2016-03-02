@@ -2,8 +2,9 @@ package ecl;
 
 use 5.008;
 use strict;
+use overload '""' => 'stringify';
 
-our $VERSION = '0.28';
+our $VERSION = '0.59';
 
 require XSLoader;
 XSLoader::load('ecl', $VERSION);
@@ -33,6 +34,7 @@ sub eval_form {
 
 sub stringify {
     my $self = shift;
+    print STDERR "root stringify\n";
     return "{dummied stringification}";
 }
 
@@ -102,7 +104,6 @@ package ecl::Char;
 our @ISA = ('ecl');
 package ecl::Ratio;
 our @ISA = ('ecl');
-###sub stringify {return "#<otf!!!>"}
 package ecl::Bignum;
 our @ISA = ('ecl');
 package ecl::Code;
