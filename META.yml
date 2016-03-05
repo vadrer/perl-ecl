@@ -2,7 +2,7 @@
 name:                ecl
 version:             0.51
 abstract:            Perl extension for ECL lisp
-license:             ~
+license:             artistic
 author:              
     - Vadim Konovalov <vkon@cpan.org>
 generated_by:        ExtUtils::MakeMaker version 6.44

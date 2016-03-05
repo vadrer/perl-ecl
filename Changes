@@ -1,6 +1,9 @@
 Revision history for Perl extension ecl (former Language::Lisp::ECLs).
 
-0.59  mar-01 2016
+0.60  mar-04 2016
+	- other way round
+
+0.59  mar-02 2016
 	- stringification
 
 0.58  mar-01 2016

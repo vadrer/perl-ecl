@@ -1,3 +1,5 @@
 * funcall with arbitrary number of parameters (now no more than 10)
+* other way round: call perl from ecl
+* document/test/use s, _s, create_string (or delete some of these)
 * t_complex and other types
 

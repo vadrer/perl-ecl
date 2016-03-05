@@ -339,6 +339,7 @@ C<funcall> can not take more than 10 args - this should be fixed.
 Language::Lisp
 
 See ecls.sf.net to read about ECL lisp project.
+See github.com/vadrer/perl-ecl
 
 =head1 AUTHOR
 
