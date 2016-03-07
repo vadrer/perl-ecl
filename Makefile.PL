@@ -1,8 +1,5 @@
 use strict;
-use 5.008;
 use ExtUtils::MakeMaker;
-# See lib/ExtUtils/MakeMaker.pm for details of how to influence
-# the contents of the Makefile that is written.
 
 sub ecl_config {
     my $args = shift;
@@ -21,7 +18,11 @@ sub ecl_config {
 }
 
 my $ecl_cflags = ecl_config("--cflags");
-my $ecl_ldflags = ecl_config("--ldflags");
+my $ecl_ldflags = ecl_config("--libs");
+if ($^O eq 'MSWin32' and $ecl_ldflags=~/\/LIBPATH:(\S+)/i){$ecl_ldflags="-L$1 ecl.lib"}
+
+sub DynaLoader::mod2fname {$_[0]->[-1].'1'} # we have 'ecl1.dll' to avoid confusion (or to bring one)
+
 
 WriteMakefile(
     NAME          => 'ecl',
@@ -32,6 +33,5 @@ WriteMakefile(
     LIBS          => ["$ecl_ldflags"],
     # DEFINE        => '-DECL_UNICODE',
     INC           => "$ecl_cflags", # e.g., '-I. -I/usr/include/other'
-	# Un-comment this if you add C files to link with later:
     # OBJECT            => '$(O_FILES)', # link all the C files too
 );

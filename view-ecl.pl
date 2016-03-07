@@ -12,7 +12,7 @@ pack [frame .frtop] -side top -fill x -expand 0
 pack [button .frtop.b1 -text {b1 (F8)} -command perl::b1] -side left
 pack [entry .frtop.e2 -textvariable perl::e2] -side left -expand 1 -fill x
 pack [button .frtop.b2 -text {eval (F9)} -command perl::b2] -side left
-pack [text .t] -side top -fill x -expand 0
+pack [text .t] -side top -fill both -expand 1
 focus .frtop.e2
 
 bind . <F8> {.frtop.b1 invoke}

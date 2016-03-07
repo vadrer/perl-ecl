@@ -16,8 +16,16 @@
 #define PACKAGE_PACKAGE   "ecl::Package"
 #define PACKAGE_HASHTABLE "ecl::HashTable"
 
+#if defined(WIN32)
+#      define EXP __declspec(dllexport)
+#else
+#      define EXP
+#endif
+
 static int boot_done = 0;
 static cl_object current_package = 0;
+
+static PerlInterpreter *_my_perl = 0;
 
 /* the structure below is used to pass SvPV to LISP */
 /* non-threadsafe usage! */
@@ -28,6 +36,103 @@ static struct ecl_base_string lisp_str = {
     0,
     0
 };
+
+/* function to aid evaling perl from lisp code; connected fia FFI */
+static char*
+_eval_perl_(char *s) {
+    fprintf(stderr, "_eval_perl, yep!\n");
+    return "";
+}
+/*
+(cffi:defcfun "eval_wrapper" :av
+  (code :string))
+(cffi:defcfun "call_wrapper" :av
+  (fun :sv)
+  (args :sv))
+*/
+EXP SV* eval_wrapper(SV *code)
+{
+    dTHX; /* fetch context */
+    dSP;
+    I32 count, i;
+    SV *sv;
+    SV *rc = &PL_sv_undef;
+
+    ENTER;
+    SAVETMPS;
+
+    PUSHMARK(sp);
+    PUTBACK;
+    count = perl_eval_sv(code, G_EVAL|G_ARRAY);
+	//fprintf(stderr,"count=%d;\n",count);
+    SPAGAIN;
+
+    if (SvTRUE(ERRSV)) {
+	/* signal error... */
+	//fprintf(stderr,"err in eval!\n");
+	POPs; /* pop the undef off the stack */
+    }
+    else {
+	AV *av = newAV();
+	av_extend(av,count);
+	for (i = 0; i < count; i++) {
+	    sv = POPs; /* pop value off the stack */
+	    SvREFCNT_inc(sv);  /*this makes leakage???*/
+	    av_store(av, count-i-1, sv);
+	}
+	//rc = sv_bless(newRV_noinc((SV *) av), gv_stashpv("Lisp::List", 1));
+	rc = av;
+    }
+
+    PUTBACK;
+    FREETMPS;
+    LEAVE;
+    return rc;
+}
+EXP SV* call_wrapper(SV *fun, AV *args)
+{
+    dTHX; /* fetch context */
+    dSP;
+    I32 count, i=0;
+    SV *sv, **ssv;
+    SV *rc = &PL_sv_undef;
+
+    ENTER;
+    SAVETMPS;
+
+    PUSHMARK(sp);
+    count = av_len(args);
+    for (i=0; i< count; i++) {
+	ssv = av_fetch(args,i,0);
+	PUSHs(*ssv);
+    }
+    PUTBACK;
+    count = perl_call_sv(fun, G_EVAL|G_ARRAY);
+	//fprintf(stderr,"(call)count=%d;\n",count);
+    SPAGAIN;
+
+    if (SvTRUE(ERRSV)) {
+	/* signal error... */
+	//fprintf(stderr,"(call)err in eval!\n");
+	POPs; /* pop the undef off the stack */
+    }
+    else {
+	AV *av = newAV();
+	//av_extend(av,count);
+	for (i = 0; i < count; i++) {
+	    sv = POPs; /* pop value off the stack */
+	    SvREFCNT_inc(sv);  /*this makes leakage???*/
+	    av_store(av, count-i-1, sv);
+	}
+	//rc = sv_bless(newRV_noinc((SV *) av), gv_stashpv("Lisp::List", 1));
+	rc = av;
+    }
+
+    PUTBACK;
+    FREETMPS;
+    LEAVE;
+    return rc;
+}
 
 static HV*
 create_lisp_on_sv(SV *rsv, const char *pkg_name)
@@ -115,6 +220,8 @@ static SV *
 cl2sv(pTHX_ cl_object clo)
 {
     SV *sv;
+    char *h;
+    int i;
     switch (type_of(clo)) {
     case t_character:
 	sv = create_lisp_sv(aTHX_ PACKAGE_CHAR, clo);
@@ -137,9 +244,9 @@ cl2sv(pTHX_ cl_object clo)
 #ifdef ECL_UNICODE
     case t_string:
 	sv = newSVpvn("",clo->string.fillp);
-        char *h = SvPV_nolen(sv);
+        h = SvPV_nolen(sv);
 	/*fprintf(stderr,"debug - t_string(%d);s=%s h=%08X\n",clo->string.fillp,clo->string.self,h);*/
-	for (int i = 0; i < clo->string.fillp; i++) {
+	for (i = 0; i < clo->string.fillp; i++) {
 	    if (!ECL_BASE_CHAR_CODE_P(clo->string.self[i]))
 	        croak("bug: t_string");
 	    h[i] = clo->string.self[i];
@@ -360,10 +467,10 @@ SV *
 stringify0(clsv)
         SV *clsv
     PREINIT:
-        cl_object clo;
+        cl_object clo, o;
     CODE:
         clo = sv2cl(clsv);
-	cl_object o = generic_stringify(clo);
+	o = generic_stringify(clo);
 	RETVAL = newSVpvn(o->base_string.self,o->base_string.fillp);
 	ecl_dealloc(o);
     OUTPUT:
@@ -442,7 +549,7 @@ SV *
 stringify(clsv, ...)
         SV *clsv
     PREINIT:
-        cl_object clo, n, p, np;
+        cl_object clo;
     CODE:
         clo = sv2cl(clsv);
 	if (type_of(clo) == t_hashtable) {
@@ -464,12 +571,14 @@ EXISTS(this, key)
     CODE:
 	/* get 'key' item, obviously... */
 	if (type_of(clo) == t_hashtable) {
+	    croak("NYI - please ask author to re-code it in ecl.xs!!!");
+           /*
 	    he = ecl_search_hash(k,clo);
 	    if (he==Cnil || he==OBJNULL) {
 		RETVAL = 0;
 	    } else {
 		RETVAL = 1;
-	    }
+	    }*/
 	} else {
 	    croak("weird lisp object, must be t_hashtable");
 	}
@@ -727,11 +836,31 @@ int
 cl_boot()
     PREINIT:
         char *argv1[] = {""};
+	char buf[256];
+	cl_object def;
+	cl_object res;
     CODE:
 	//argc, argv TODO int argc
 	//argc, argv TODO char **argv
         RETVAL = cl_boot(0,argv1);
 	current_package = ecl_current_package();
+        _my_perl = my_perl;
+        /* also create/init here perl::ev function */
+        /* (or do it in BOOT section ? - to be decided l8r) */
+        /**/
+        /* declare addr of eval helper */
+        //t = _eval_perl_;
+        printf("a=%08X\n", _eval_perl_);
+        //"(make-pointer 08X)"
+        sprintf(buf,"(defvar *_ev_perl_* (make-pointer #X%08X))", _eval_perl_);
+        def = c_string_to_object(buf);
+	res = si_safe_eval(3,def,Cnil,OBJNULL);
+        printf("buf=%s hehe;\n", buf);
+
+	//cl_object def = c_string_to_object("(ffi:def-function)");
+	//res = si_safe_eval(3,def,Cnil,OBJNULL);
+        //_eval("");
+        /**/
 	boot_done = 1;
     OUTPUT:
     	RETVAL
@@ -746,7 +875,6 @@ _eval(s)
 	char *s
     PREINIT:
 	cl_object def;
-	cl_object n, p;
 	cl_object res;
     CODE:
 	//if (!boot_done)

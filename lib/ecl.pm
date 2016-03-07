@@ -4,13 +4,16 @@ use 5.008;
 use strict;
 use overload '""' => 'stringify';
 
-our $VERSION = '0.59';
+our $VERSION = '0.60';
 
 require XSLoader;
+sub DynaLoader::mod2fname {$_[0]->[-1].'1'} # we have 'ecl1.dll' to avoid confusion (or to bring one)
 XSLoader::load('ecl', $VERSION);
+undef &DynaLoader::mod2fname;
 
 sub new {
     cl_boot();
+    #_eval("");
     return bless {}, __PACKAGE__;
 }
 
@@ -41,6 +44,7 @@ sub stringify {
 my %meth;
 
 sub vivify_lisp_method {
+    print STDERR "[[debug, vivify_lisp_method:@_]]\n";
     my ($package, $method) = @_;
     my $method0;
     for ($method) {

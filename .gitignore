@@ -1,6 +1,6 @@
 Makefile
-Tcl.bs
-Tcl.c
+ecl.bs
+ecl.c
 blib
 pm_to_blib
 *.o

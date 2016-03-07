@@ -1,7 +1,8 @@
 Revision history for Perl extension ecl (former Language::Lisp::ECLs).
 
 0.60  mar-04 2016
-	- other way round
+	- other way round - eval perl code from lisp (not here yet)
+	- win32 with msvc
 
 0.59  mar-02 2016
 	- stringification

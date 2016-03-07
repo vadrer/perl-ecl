@@ -1,7 +1,6 @@
 # vim: syn=perl
 use strict;
 use blib;
-#use lib qw(D:\Personal\ecls\ecls-perl\Language-Lisp-ECLs\blib\arch D:\Personal\ecls\ecls-perl\Language-Lisp-ECLs\blib\lib);
 use ecl;
 my $cl = new ecl;
 
