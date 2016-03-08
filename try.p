@@ -4,14 +4,32 @@ use blib;
 use ecl;
 my $cl = new ecl;
 
+
 my $res = $cl->eval("(+ 2 3 4) (print \"hello\")");
 print "res=$res;\n";
 #
 
 $cl->eval(<<"EOS");
 (defun si::universal-error-handler (cformat eformat &rest args)
-  (prin1 (format nil "hej-hoj-huj [c=~A] [e=~A] ~A" cformat eformat args)))
+  (progn
+    (prin1 (format nil "hej-hoj-huj [c=~A] [e=~A] ~A" cformat eformat args))
+    ;;(tpl-print-current)
+    (invoke-debugger t)
+    nil
+  ))
+;(defun si::universal-error-handler (cformat eformat &rest args)
+;  (prin1 (format nil "hej-hoj-huj [c=~A] [e=~A] ~A" cformat eformat args)))
 EOS
+
+print '>>'.ecl::cl_boot1.'<<';
+$cl->eval(<<"EOS");
+(progn
+(prin1 *_ev_perl_*)
+(si::call-cfun *_ev_perl_* :void nil )
+(prin1 :*_ev_perl_*)
+)
+EOS
+
 
 my $list = $cl->eval("'(a b c d qwerty)");
 print "4th item is ".$list->item(4)->stringify.";\n";
@@ -19,6 +37,8 @@ print "4th item is ".$list->item(4)->stringify.";\n";
 my $arr = $list->_tie;
 if (tied @$arr) {print "TIED!"} else {die "huj"}
 print "list len is ".$#$arr."+1; items=@$arr;\n";
+
+__END__
 
 my $h = $cl->eval("(setq qwerty (make-hash-table)) qwerty");
 my $ha = $h->_tie;

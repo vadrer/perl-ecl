@@ -850,18 +850,33 @@ cl_boot()
         /**/
         /* declare addr of eval helper */
         //t = _eval_perl_;
-        printf("a=%08X\n", _eval_perl_);
-        //"(make-pointer 08X)"
-        sprintf(buf,"(defvar *_ev_perl_* (make-pointer #X%08X))", _eval_perl_);
+        sprintf(buf,"(defvar *_ev_perl_* (ffi:make-pointer #X%08X :void))", _eval_perl_);
         def = c_string_to_object(buf);
-	res = si_safe_eval(3,def,Cnil,OBJNULL);
-        printf("buf=%s hehe;\n", buf);
+	////////res = si_safe_eval(3,def,Cnil,OBJNULL);
+        //
+        //printf("buf=%s hehe;\n", buf);
 
 	//cl_object def = c_string_to_object("(ffi:def-function)");
 	//res = si_safe_eval(3,def,Cnil,OBJNULL);
         //_eval("");
         /**/
 	boot_done = 1;
+    OUTPUT:
+    	RETVAL
+
+SV *
+cl_boot1()
+    PREINIT:
+	char buf[256];
+	cl_object def;
+	cl_object res;
+    CODE:
+        sprintf(buf,"(defvar *_ev_perl_* (ffi:make-pointer #X%08X :void)    )", _eval_perl_);
+        printf("buf=%s hehe;\n", buf);
+        def = c_string_to_object(buf);
+	res = si_safe_eval(3,def,Cnil,OBJNULL);
+        printf("buf=%s hehe;\n", buf);
+	RETVAL = (res?cl2sv(aTHX_ res):&PL_sv_undef);
     OUTPUT:
     	RETVAL
 

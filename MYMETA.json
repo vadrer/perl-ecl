@@ -4,7 +4,7 @@
       "Vadim Konovalov <vkon@cpan.org>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "ExtUtils::MakeMaker version 6.44, CPAN::Meta::Converter version 2.120630",
+   "generated_by" : "ExtUtils::MakeMaker version 6.44, CPAN::Meta::Converter version 2.143240",
    "license" : [
       "artistic_1"
    ],
@@ -15,6 +15,11 @@
    "name" : "ecl",
    "prereqs" : {
       "build" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "0"
+         }
+      },
+      "configure" : {
          "requires" : {
             "ExtUtils::MakeMaker" : "0"
          }

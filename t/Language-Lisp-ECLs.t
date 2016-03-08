@@ -3,6 +3,7 @@
 
 #########################
 
+BEGIN{$ENV{PERL_DL_NONLAZY}=0}# Temporary  fix:) oh, don't ask why....  
 # change 'tests => 1' to 'tests => last_test_to_print';
 
 use Test::More ('no_plan'); # tests => 30?;
@@ -59,4 +60,4 @@ is($cl->eval("3/4")->stringify,"#<RATIO 3/4>");
 is($cl->eval("3/4000000000000000000000000000000")->stringify,"#<RATIO 3/4000000000000000000000000000000>");
 
 # complex nums (TBD)
-
+Z
