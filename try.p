@@ -1,3 +1,5 @@
+#BEGIN {$ENV{LD_LIBRARY_PATH}='/Personal/lisp-src/ecl-16.1.2/build';}
+
 # vim: syn=perl
 use strict;
 use blib;
@@ -21,12 +23,11 @@ $cl->eval(<<"EOS");
 ;  (prin1 (format nil "hej-hoj-huj [c=~A] [e=~A] ~A" cformat eformat args)))
 EOS
 
-print '>>'.ecl::cl_boot1.'<<';
 $cl->eval(<<"EOS");
 (progn
 (prin1 *_ev_perl_*)
-(si::call-cfun *_ev_perl_* :void nil )
-(prin1 :*_ev_perl_*)
+;(prin1 (si::call-cfun *_ev_perl_* :object  (list :object) (list "join (',','a'..'z'). qq/hello!/" ) ))
+(prin1 (perl-ev "join (',','a'..'z'). qq/hello!/" ) )
 )
 EOS
 

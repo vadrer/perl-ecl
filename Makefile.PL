@@ -1,8 +1,8 @@
-use strict;
 use ExtUtils::MakeMaker;
 
 sub ecl_config {
     my $args = shift;
+
     open(ECLCONFIG, "ecl-config $args|")
 	or do {
 	    warn "can't run \"ecl-config $args|\" - $!\n";
@@ -18,7 +18,7 @@ sub ecl_config {
 }
 
 my $ecl_cflags = ecl_config("--cflags");
-my $ecl_ldflags = ecl_config("--libs");
+my $ecl_ldflags = ecl_config("--libs");                             
 if ($^O eq 'MSWin32' and $ecl_ldflags=~/\/LIBPATH:(\S+)/i){$ecl_ldflags="-L$1 ecl.lib"}
 
 sub DynaLoader::mod2fname {$_[0]->[-1].'1'} # we have 'ecl1.dll' to avoid confusion (or to bring one)

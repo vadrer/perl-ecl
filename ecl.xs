@@ -39,9 +39,23 @@ static struct ecl_base_string lisp_str = {
 
 /* function to aid evaling perl from lisp code; connected fia FFI */
 static char*
-_eval_perl_(char *s) {
-    fprintf(stderr, "_eval_perl, yep!\n");
-    return "";
+_eval_perl_str_(char *s) {
+    fprintf(stderr, "_eval_perl [%s], yep!\n", s);
+    return "hohoho, hehehe! :)";
+}
+static cl_object sv2cl(SV *sv);
+static SV * cl2sv(cl_object clo);
+static cl_object
+_eval_perl_ob_(cl_object ob) {
+    dSP;
+    SV *sv = cl2sv(ob);
+    SV* retval;
+    PUSHMARK(SP);
+    eval_sv(sv, G_SCALAR);
+    SPAGAIN;
+    retval = POPs;
+    PUTBACK;
+    return sv2cl(retval);
 }
 /*
 (cffi:defcfun "eval_wrapper" :av
@@ -151,7 +165,7 @@ create_lisp_on_sv(SV *rsv, const char *pkg_name)
 }
 
 static SV*
-create_lisp_sv(pTHX_ const char *pkg_name, cl_object obj)
+create_lisp_sv(const char *pkg_name, cl_object obj)
 {
     SV *sv = newSVpv((char*)&obj,4);
     SV *rsv = newRV_noinc(sv); /* after this sv will have refcnt 1 (fortunately) */
@@ -205,35 +219,34 @@ sv2cl(SV *sv)
     } else if (SvPOK(sv)) {
 	int len;
         char *str = SvPV(sv,len);
-        cl_object x = cl_alloc_simple_base_string(len);
-        /* fprintf(stderr,"SvPOK, %s, good!\n",str); */
-        memcpy(x->base_string.self, str, len);
-        /*x->base_string.self[len] = 0;*/ // TODO freeing of this stuff
+        /*cl_object x = ecl_cstring_to_base_string_or_nil(str);*/
+        cl_object x = ecl_make_simple_base_string(str,len);
 	return x;
     } else {
 	fprintf(stderr,"sv2cl: str=%s;\n",SvPV_nolen(sv));
 	croak("sv2cl: passed not a subclass of ecl, not string and not int");
     }
+    return 0;
 }
 
 static SV *
-cl2sv(pTHX_ cl_object clo)
+cl2sv(cl_object clo)
 {
     SV *sv;
     char *h;
     int i;
     switch (type_of(clo)) {
     case t_character:
-	sv = create_lisp_sv(aTHX_ PACKAGE_CHAR, clo);
+	sv = create_lisp_sv(PACKAGE_CHAR, clo);
         break;
     case t_bignum:
-	sv = create_lisp_sv(aTHX_ PACKAGE_BIGNUM, clo);
+	sv = create_lisp_sv(PACKAGE_BIGNUM, clo);
         break;
     case t_ratio:
-	sv = create_lisp_sv(aTHX_ PACKAGE_RATIO, clo);
+	sv = create_lisp_sv(PACKAGE_RATIO, clo);
         break;
     case t_list:
-	sv = create_lisp_sv(aTHX_ PACKAGE_LIST, clo);
+	sv = create_lisp_sv(PACKAGE_LIST, clo);
 	break;
     case t_fixnum:
 	sv = newSViv(fix(clo));
@@ -254,13 +267,13 @@ cl2sv(pTHX_ cl_object clo)
 	break;
 #endif
     case t_package:
-	sv = create_lisp_sv(aTHX_ PACKAGE_PACKAGE, clo);
+	sv = create_lisp_sv(PACKAGE_PACKAGE, clo);
 	break;
     case t_hashtable:
-	sv = create_lisp_sv(aTHX_ PACKAGE_HASHTABLE, clo);
+	sv = create_lisp_sv(PACKAGE_HASHTABLE, clo);
 	break;
     case t_bytecodes:
-	sv = create_lisp_sv(aTHX_ PACKAGE_CODE, clo);
+	sv = create_lisp_sv(PACKAGE_CODE, clo);
 	break;
     case t_symbol:
 	    /*
@@ -271,11 +284,11 @@ cl2sv(pTHX_ cl_object clo)
 	    (type_of(n)==t_base_string?n->base_string.self:"??"),
 	    type_of(p));
 	    */
-	sv = create_lisp_sv(aTHX_ PACKAGE_SYMBOL, clo);
+	sv = create_lisp_sv(PACKAGE_SYMBOL, clo);
 	break;
     default:
 	fprintf(stderr,"type %d not impl!\n",type_of(clo));
-	sv = create_lisp_sv(aTHX_ PACKAGE_GENERIC, clo);
+	sv = create_lisp_sv(PACKAGE_GENERIC, clo);
 	break;
     }
     return sv;
@@ -331,7 +344,7 @@ FETCH(this, n)
 	    if (o==Cnil || o==OBJNULL) {
 		RETVAL = &PL_sv_undef;
 	    } else {
-		RETVAL = cl2sv(aTHX_ o);
+		RETVAL = cl2sv(o);
 	    }
 	} else {
 	    croak("weird lisp object, must be t_list");
@@ -505,8 +518,8 @@ stringify(clsv, ...)
 	/* fprintf(stderr,"ratio stringify\n"); */
         clo = sv2cl(clsv);
 	if (type_of(clo) == t_ratio) {
-	    SV *den = cl2sv(aTHX_ clo->ratio.den);
-	    SV *num = cl2sv(aTHX_ clo->ratio.num);
+	    SV *den = cl2sv(clo->ratio.den);
+	    SV *num = cl2sv(clo->ratio.num);
 	    SV *denss, *numss;
 	    char *denstr, *numstr;
 
@@ -599,7 +612,7 @@ FETCH(this, key)
 	    if (o==Cnil || o==OBJNULL) {
 		RETVAL = &PL_sv_undef;
 	    } else {
-		RETVAL = cl2sv(aTHX_ o);
+		RETVAL = cl2sv(o);
 	    }
 	} else {
 	    croak("weird lisp object, must be t_hashtable");
@@ -665,7 +678,7 @@ funcall(self, ...)
 	    args[1] = sv2cl(ST(2));
 	    args[0] = sv2cl(ST(1));
 	    res = cl_funcall(items1,def,args[0],args[1],args[2],args[3],args[4],args[5],args[6],args[7],args[8]);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	case 9:
 	    args[7] = sv2cl(ST(8));
@@ -677,7 +690,7 @@ funcall(self, ...)
 	    args[1] = sv2cl(ST(2));
 	    args[0] = sv2cl(ST(1));
 	    res = cl_funcall(items1,def,args[0],args[1],args[2],args[3],args[4],args[5],args[6],args[7]);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	case 8:
 	    args[6] = sv2cl(ST(7));
@@ -688,7 +701,7 @@ funcall(self, ...)
 	    args[1] = sv2cl(ST(2));
 	    args[0] = sv2cl(ST(1));
 	    res = cl_funcall(items1,def,args[0],args[1],args[2],args[3],args[4],args[5],args[6]);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	case 7:
 	    args[5] = sv2cl(ST(6));
@@ -698,7 +711,7 @@ funcall(self, ...)
 	    args[1] = sv2cl(ST(2));
 	    args[0] = sv2cl(ST(1));
 	    res = cl_funcall(items1,def,args[0],args[1],args[2],args[3],args[4],args[5]);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	case 6:
 	    args[4] = sv2cl(ST(5));
@@ -707,7 +720,7 @@ funcall(self, ...)
 	    args[1] = sv2cl(ST(2));
 	    args[0] = sv2cl(ST(1));
 	    res = cl_funcall(items1,def,args[0],args[1],args[2],args[3],args[4]);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	case 5:
 	    args[3] = sv2cl(ST(4));
@@ -715,29 +728,29 @@ funcall(self, ...)
 	    args[1] = sv2cl(ST(2));
 	    args[0] = sv2cl(ST(1));
 	    res = cl_funcall(items1,def,args[0],args[1],args[2],args[3]);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	case 4:
 	    args[2] = sv2cl(ST(3));
 	    args[1] = sv2cl(ST(2));
 	    args[0] = sv2cl(ST(1));
 	    res = cl_funcall(items1,def,args[0],args[1],args[2]);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	case 3:
 	    args[1] = sv2cl(ST(2));
 	    args[0] = sv2cl(ST(1));
 	    res = cl_funcall(items1,def,args[0],args[1]);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	case 2:
 	    args[0] = sv2cl(ST(1));
 	    res = cl_funcall(items1,def,args[0]);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	case 1:
 	    res = cl_funcall(items1,def);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	default:
 	    croak("items %d not supported - wtf", items);
@@ -848,35 +861,13 @@ cl_boot()
         /* also create/init here perl::ev function */
         /* (or do it in BOOT section ? - to be decided l8r) */
         /**/
-        /* declare addr of eval helper */
-        //t = _eval_perl_;
-        sprintf(buf,"(defvar *_ev_perl_* (ffi:make-pointer #X%08X :void))", _eval_perl_);
-        def = c_string_to_object(buf);
-	////////res = si_safe_eval(3,def,Cnil,OBJNULL);
-        //
-        //printf("buf=%s hehe;\n", buf);
-
-	//cl_object def = c_string_to_object("(ffi:def-function)");
-	//res = si_safe_eval(3,def,Cnil,OBJNULL);
-        //_eval("");
-        /**/
-	boot_done = 1;
-    OUTPUT:
-    	RETVAL
-
-SV *
-cl_boot1()
-    PREINIT:
-	char buf[256];
-	cl_object def;
-	cl_object res;
-    CODE:
-        sprintf(buf,"(defvar *_ev_perl_* (ffi:make-pointer #X%08X :void)    )", _eval_perl_);
-        printf("buf=%s hehe;\n", buf);
+        /* addr of eval helper */
+        sprintf(buf,"(progn (defvar *_ev_perl_* (ffi:make-pointer #X%08X :object)) (defun perl-ev (c) (si::call-cfun *_ev_perl_* :object  (list :object) (list c) ) )   () )",
+              _eval_perl_ob_);
         def = c_string_to_object(buf);
 	res = si_safe_eval(3,def,Cnil,OBJNULL);
-        printf("buf=%s hehe;\n", buf);
-	RETVAL = (res?cl2sv(aTHX_ res):&PL_sv_undef);
+        /**/
+	boot_done = 1;
     OUTPUT:
     	RETVAL
 
@@ -901,7 +892,7 @@ _eval(s)
 	/* def->base_string.self = 0; */
 	/* ecl_dealloc(def); */
 	/* (check for memory leaks?) */
-	RETVAL = (res?cl2sv(aTHX_ res):&PL_sv_undef);
+	RETVAL = (res?cl2sv(res):&PL_sv_undef);
     OUTPUT:
     	RETVAL
 
@@ -915,7 +906,7 @@ _eval_form(lispobj)
     CODE:
 	/* res = cl_eval(def); */
 	res = si_safe_eval(3,def,Cnil,OBJNULL);
-	RETVAL = (res?cl2sv(aTHX_ res):&PL_sv_undef);
+	RETVAL = (res?cl2sv(res):&PL_sv_undef);
     OUTPUT:
     	RETVAL
 
@@ -940,7 +931,7 @@ funcall(self,lispobj, ...)
 	    args[1] = sv2cl(ST(3));
 	    args[0] = sv2cl(ST(2));
 	    res = cl_funcall(items1,def,args[0],args[1],args[2],args[3],args[4],args[5],args[6],args[7],args[8]);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	case 9:
 	    args[7] = sv2cl(ST(9));
@@ -952,7 +943,7 @@ funcall(self,lispobj, ...)
 	    args[1] = sv2cl(ST(3));
 	    args[0] = sv2cl(ST(2));
 	    res = cl_funcall(items1,def,args[0],args[1],args[2],args[3],args[4],args[5],args[6],args[7]);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	case 8:
 	    args[6] = sv2cl(ST(8));
@@ -963,7 +954,7 @@ funcall(self,lispobj, ...)
 	    args[1] = sv2cl(ST(3));
 	    args[0] = sv2cl(ST(2));
 	    res = cl_funcall(items1,def,args[0],args[1],args[2],args[3],args[4],args[5],args[6]);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	case 7:
 	    args[5] = sv2cl(ST(7));
@@ -973,7 +964,7 @@ funcall(self,lispobj, ...)
 	    args[1] = sv2cl(ST(3));
 	    args[0] = sv2cl(ST(2));
 	    res = cl_funcall(items1,def,args[0],args[1],args[2],args[3],args[4],args[5]);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	case 6:
 	    args[4] = sv2cl(ST(6));
@@ -982,7 +973,7 @@ funcall(self,lispobj, ...)
 	    args[1] = sv2cl(ST(3));
 	    args[0] = sv2cl(ST(2));
 	    res = cl_funcall(items1,def,args[0],args[1],args[2],args[3],args[4]);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	case 5:
 	    args[3] = sv2cl(ST(5));
@@ -990,29 +981,29 @@ funcall(self,lispobj, ...)
 	    args[1] = sv2cl(ST(3));
 	    args[0] = sv2cl(ST(2));
 	    res = cl_funcall(items1,def,args[0],args[1],args[2],args[3]);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	case 4:
 	    args[2] = sv2cl(ST(4));
 	    args[1] = sv2cl(ST(3));
 	    args[0] = sv2cl(ST(2));
 	    res = cl_funcall(items1,def,args[0],args[1],args[2]);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	case 3:
 	    args[1] = sv2cl(ST(3));
 	    args[0] = sv2cl(ST(2));
 	    res = cl_funcall(items1,def,args[0],args[1]);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	case 2:
 	    args[0] = sv2cl(ST(2));
 	    res = cl_funcall(items1,def,args[0]);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	case 1:
 	    res = cl_funcall(items1,def);
-	    RETVAL = cl2sv(aTHX_ res);
+	    RETVAL = cl2sv(res);
 	    break;
 	default:
 	    croak("nitems %d not supported - wtf", items);
@@ -1040,7 +1031,7 @@ _search_lisp_function(fname)
 	} else {
 	    /* found function definition, so blessed object to ...::Code package
 	     * is returned */
-	    RETVAL = create_lisp_sv(aTHX_ PACKAGE_CODE,fun);
+	    RETVAL = create_lisp_sv(PACKAGE_CODE,fun);
 	}
     OUTPUT:
     	RETVAL
@@ -1052,7 +1043,7 @@ _keyword(keyw)
     PREINIT:
         cl_object sym = ecl_make_keyword(keyw);
     CODE:
-	RETVAL = create_lisp_sv(aTHX_ PACKAGE_SYMBOL,sym);
+	RETVAL = create_lisp_sv(PACKAGE_SYMBOL,sym);
     OUTPUT:
     	RETVAL
 
@@ -1063,7 +1054,7 @@ keyword(self, keyw)
     PREINIT:
         cl_object sym = ecl_make_keyword(keyw);
     CODE:
-	RETVAL = create_lisp_sv(aTHX_ PACKAGE_SYMBOL,sym);
+	RETVAL = create_lisp_sv(PACKAGE_SYMBOL,sym);
     OUTPUT:
     	RETVAL
 
@@ -1087,7 +1078,7 @@ _char(chr)
 	    croak("pers rep of lisp char must be either int or string of length 1");
 	}
         ch = CODE_CHAR(ccode);
-	RETVAL = create_lisp_sv(aTHX_ PACKAGE_CHAR,ch);
+	RETVAL = create_lisp_sv(PACKAGE_CHAR,ch);
     OUTPUT:
     	RETVAL
 
@@ -1105,7 +1096,7 @@ _s(sname)
 	if (sym==OBJNULL || sym==Cnil) {
 	    RETVAL = &PL_sv_undef;
 	} else {
-	    RETVAL = create_lisp_sv(aTHX_ PACKAGE_SYMBOL,sym);
+	    RETVAL = create_lisp_sv(PACKAGE_SYMBOL,sym);
 	}
     OUTPUT:
     	RETVAL
@@ -1125,7 +1116,7 @@ s(this, sname)
 	if (sym==OBJNULL || sym==Cnil) {
 	    RETVAL = &PL_sv_undef;
 	} else {
-	    RETVAL = create_lisp_sv(aTHX_ PACKAGE_SYMBOL,sym);
+	    RETVAL = create_lisp_sv(PACKAGE_SYMBOL,sym);
 	}
     OUTPUT:
     	RETVAL
@@ -1143,7 +1134,7 @@ create_string(sv)
         x = cl_alloc_simple_base_string(len);
         memcpy(x->base_string.self, str, len);
         /* x->base_string.self[len] = 0; */
-	RETVAL = create_lisp_sv(aTHX_ PACKAGE_STRING,x);
+	RETVAL = create_lisp_sv(PACKAGE_STRING,x);
     OUTPUT:
         RETVAL
 
