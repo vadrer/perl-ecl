@@ -424,7 +424,14 @@ stringify(clsv, ...)
 	if (type_of(clo) == t_package) {
 	    np = cl_package_name(clo);
 	    RETVAL = newSVpvf("#<PACKAGE %s>",
-		(type_of(np)==t_base_string?np->base_string.self:"??")
+		(type_of(np)==t_base_string?np->base_string.self:
+#ifdef ECL_UNICODE
+		  (type_of(np)==t_string?
+                      si_coerce_to_base_string(np)->base_string.self:"??")
+#else
+                  "??"
+#endif
+		)
 	      );
 	} else {
 	    croak("can not stringify non-t_package within ...::Package package");
@@ -862,7 +869,7 @@ cl_boot()
         /* (or do it in BOOT section ? - to be decided l8r) */
         /**/
         /* addr of eval helper */
-        sprintf(buf,"(progn (defvar *_ev_perl_* (ffi:make-pointer #X%08X :object)) (defun perl-ev (c) (si::call-cfun *_ev_perl_* :object  (list :object) (list c) ) )   () )",
+        sprintf(buf,"(progn (defvar *_ev_perl_* (ffi:make-pointer #X%X :object)) (defun perl-ev (c) (si::call-cfun *_ev_perl_* :object  (list :object) (list c) ) )   () )",
               _eval_perl_ob_);
         def = c_string_to_object(buf);
 	res = si_safe_eval(3,def,Cnil,OBJNULL);

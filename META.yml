@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                ecl
-version:             0.51
+version:             0.61
 abstract:            Perl extension for ECL lisp
 license:             artistic
 author:              

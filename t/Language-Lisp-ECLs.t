@@ -17,8 +17,7 @@ ok($cl->eval("(+ 1 2)")==3, '1+2=3');
 is($cl->eval("(format nil \"[~S]\" 'qwerty)"), '[QWERTY]');
 is($cl->eval("'qwerty")->stringify, '#<SYMBOL COMMON-LISP-USER::QWERTY>', 'symbol stringification');
 is($cl->eval("(defpackage :qw)")->stringify, '#<PACKAGE QW>', 'package');
-#??? TODO TODO 
-0 and is($cl->eval("(defpackage \"qw\")")->stringify, '#<PACKAGE qw>', 'package');
+is($cl->eval("(defpackage \"qw\")")->stringify, '#<PACKAGE qw>', 'package');
 
 my $lam = $cl->eval("(lambda (x y) (+ x y))");
 is($lam->funcall(40,2),42,'funcall');
@@ -61,4 +60,3 @@ is($cl->eval("3/4")->stringify,"#<RATIO 3/4>");
 is($cl->eval("3/4000000000000000000000000000000")->stringify,"#<RATIO 3/4000000000000000000000000000000>");
 
 # complex nums (TBD)
-Z

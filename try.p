@@ -39,7 +39,6 @@ my $arr = $list->_tie;
 if (tied @$arr) {print "TIED!"} else {die "huj"}
 print "list len is ".$#$arr."+1; items=@$arr;\n";
 
-__END__
 
 my $h = $cl->eval("(setq qwerty (make-hash-table)) qwerty");
 my $ha = $h->_tie;
@@ -54,6 +53,7 @@ print $maplam->stringify, "$maplam";
 $cl->maphash($maplam, $h);
 print "*\n";
 
+__END__
 #$cl->shutdown;
 my $nil = $cl->eval("nil");
 my $t = $cl->eval("t");

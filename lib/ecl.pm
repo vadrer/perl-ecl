@@ -4,7 +4,7 @@ use 5.008;
 use strict;
 use overload '""' => 'stringify';
 
-our $VERSION = '0.60';
+our $VERSION = '0.61';
 
 require XSLoader;
 sub DynaLoader::mod2fname {$_[0]->[-1].'1'} # we have 'ecl1.dll' to avoid confusion (or to bring one)
@@ -253,6 +253,10 @@ to the 'keyword' package. These keywords correspond to lisp's C<:keywords>.
 
 given lisp object blessed to package ecl::Code calls the
 procedure.
+
+=head3 other way round: perl-ev
+
+ (prin1 (perl-ev "join (',','a'..'z'). qq/hello!/" ) )
 
 =head2 AUTOLOADing
 
