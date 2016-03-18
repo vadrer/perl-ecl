@@ -4,7 +4,7 @@ use 5.008;
 use strict;
 use overload '""' => 'stringify';
 
-our $VERSION = '0.61';
+our $VERSION = '0.62';
 
 require XSLoader;
 sub DynaLoader::mod2fname {$_[0]->[-1].'1'} # we have 'ecl1.dll' to avoid confusion (or to bring one)
@@ -44,7 +44,7 @@ sub stringify {
 my %meth;
 
 sub vivify_lisp_method {
-    print STDERR "[[debug, vivify_lisp_method:@_]]\n";
+    #print STDERR "[[debug, vivify_lisp_method:@_]]\n";
     my ($package, $method) = @_;
     my $method0;
     for ($method) {
@@ -109,6 +109,8 @@ our @ISA = ('ecl');
 package ecl::Ratio;
 our @ISA = ('ecl');
 package ecl::Bignum;
+our @ISA = ('ecl');
+package ecl::Complex;
 our @ISA = ('ecl');
 package ecl::Code;
 our @ISA = ('ecl');

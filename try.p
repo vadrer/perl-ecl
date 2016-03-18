@@ -1,5 +1,3 @@
-#BEGIN {$ENV{LD_LIBRARY_PATH}='/Personal/lisp-src/ecl-16.1.2/build';}
-
 # vim: syn=perl
 use strict;
 use blib;
@@ -7,14 +5,15 @@ use ecl;
 my $cl = new ecl;
 
 
-my $res = $cl->eval("(+ 2 3 4) (print \"hello\")");
-print "res=$res;\n";
+#my $res = $cl->eval("(progn (+ 2 3 4) (print \"hello\n\"))");
+#print "res=$res;\n";
+#__END__
 #
 
 $cl->eval(<<"EOS");
 (defun si::universal-error-handler (cformat eformat &rest args)
   (progn
-    (prin1 (format nil "hej-hoj-huj [c=~A] [e=~A] ~A" cformat eformat args))
+    (prin1 (format nil "ERR: [c=~A] [e=~A] ~A" cformat eformat args))
     ;;(tpl-print-current)
     (invoke-debugger t)
     nil
@@ -31,6 +30,24 @@ $cl->eval(<<"EOS");
 )
 EOS
 
+print '#p"."<->'.$cl->eval('#p"."'),"\n";
+my $cx = $cl->eval("(sqrt (/ 1 -4000000))");
+print "cx=$cx; cx^2=".$cl->eval("(* (complex 0 1)(complex 0 1))")."\n";
+
+$cl->eval(<<'EOS');
+(progn
+(prin1 (perl-ev-list "qq/foo, bar, fluffy/ =~ /(\\w+)/g"))
+(prin1 (perl-ev-list "
+use Tcl::Tk;
+my $i=new Tcl::Tk;
+$i->mainwindow->Button(-text=>(join ',','weew'..'weez'),-command=>'destroy .')->pack->focus;
+$i->MainLoop;
+(join '+','a'..'zz') =~ /(\\w+)\\+rt\\+(\\w+)/g
+"))
+)
+EOS
+
+__END__
 
 my $list = $cl->eval("'(a b c d qwerty)");
 print "4th item is ".$list->item(4)->stringify.";\n";

@@ -10,6 +10,7 @@
 #define PACKAGE_CHAR      "ecl::Char"
 #define PACKAGE_RATIO     "ecl::Ratio"
 #define PACKAGE_BIGNUM    "ecl::Bignum"
+#define PACKAGE_COMPLEX   "ecl::Complex"
 #define PACKAGE_SYMBOL    "ecl::Symbol"
 #define PACKAGE_STRING    "ecl::String"
 #define PACKAGE_GENERIC   "ecl::Generic"
@@ -51,11 +52,61 @@ _eval_perl_ob_(cl_object ob) {
     SV *sv = cl2sv(ob);
     SV* retval;
     PUSHMARK(SP);
-    eval_sv(sv, G_SCALAR);
+    /* ideally - we need to check for context. for simplicity - do in list 1 */
+    eval_sv(sv, G_EVAL|G_ARRAY);
     SPAGAIN;
     retval = POPs;
     PUTBACK;
     return sv2cl(retval);
+}
+static cl_object
+_eval_perl_list_(cl_object ob) {
+    dVAR; dXSARGS;
+    SV *sv = cl2sv(ob);
+    SV* retval;
+    int nitems, i;
+    PUSHMARK(SP);
+    /* figure out how many items on stack an make list w this many elts */
+    nitems = eval_sv(sv, G_EVAL|G_ARRAY);
+
+    SPAGAIN;
+    /* show this as list of n items */
+    /*
+       we need to move n items from perl stack to ecl lisp stack
+       todo TODO - need the ECL_UNWIND_PROTECT_BEGIN(the_env) ??
+THIS IS not what is happening now, therefore this is a point of efficiency improvement!!!
+    // 1.1 grow
+        ecl_va_list args, args1;
+        ecl_va_start(args, nitems, nitems, 0);
+        ecl_va_copy(args1, args);
+    // 1.2 populate stack
+    for (i=0; i<nitems; i++) {
+	ecl_va_arg(args) = sv2cl(ST(i));
+    }
+    // 2. profit
+    list(args1); // this will get from ecl stack, yep, and pudt to list
+    */
+
+
+    cl_object l = ECL_NIL; // cl_make_list(1, ecl_make_fixnum(nitems));
+
+    /* one of items below is O(1), one is O(N*N) - realise wht what TODO */
+    for (i=0; i<nitems; i++) {
+	SV *st = POPs;
+	char *s = SvPV_nolen(st);
+	l = ecl_append(ecl_list1(sv2cl(st)), l); /** OMG O(N^2) INEFFICIENT NOW!!!**/
+    }
+
+#if 0
+    for (i=nitems-1; i>=0; i--) {
+	SV *st = *(sp-i);
+	char *s = SvPV_nolen(st);
+	l = ecl_append(l, ecl_list1(sv2cl(st))); /** OMG O(N^2) INEFFICIENT NOW!!!**/
+    }
+#endif
+
+    PUTBACK;
+    return l;
 }
 /*
 (cffi:defcfun "eval_wrapper" :av
@@ -217,9 +268,11 @@ sv2cl(SV *sv)
         /* fprintf(stderr,"SvIOK, %d, good!\n",iv); */
 	return ecl_make_integer(iv);
     } else if (SvPOK(sv)) {
+	//fprintf(stderr,"r3; TODO\n");
 	int len;
         char *str = SvPV(sv,len);
         /*cl_object x = ecl_cstring_to_base_string_or_nil(str);*/
+  //TODO - convert to t_string, also check  utf8, in which case t_string
         cl_object x = ecl_make_simple_base_string(str,len);
 	return x;
     } else {
@@ -274,6 +327,9 @@ cl2sv(cl_object clo)
 	break;
     case t_bytecodes:
 	sv = create_lisp_sv(PACKAGE_CODE, clo);
+	break;
+    case t_complex:
+	sv = create_lisp_sv(PACKAGE_COMPLEX, clo);
 	break;
     case t_symbol:
 	    /*
@@ -435,6 +491,25 @@ stringify(clsv, ...)
 	      );
 	} else {
 	    croak("can not stringify non-t_package within ...::Package package");
+	}
+    OUTPUT:
+    	RETVAL
+
+MODULE = ecl::Complex		PACKAGE = ecl::Complex		
+
+SV *
+stringify(clsv, ...)
+        SV *clsv
+    PREINIT:
+        cl_object clo;
+    CODE:
+        clo = sv2cl(clsv);
+	if (type_of(clo) == t_complex) {
+	    RETVAL = newSVpvf("#C(%g %g)",
+		ecl_to_double(clo->complex.real),
+		ecl_to_double(clo->complex.imag));
+	} else {
+	    croak("can not stringify non-t_complex within ...::Complex package");
 	}
     OUTPUT:
     	RETVAL
@@ -856,7 +931,7 @@ int
 cl_boot()
     PREINIT:
         char *argv1[] = {""};
-	char buf[256];
+	char buf[356];
 	cl_object def;
 	cl_object res;
     CODE:
@@ -869,8 +944,9 @@ cl_boot()
         /* (or do it in BOOT section ? - to be decided l8r) */
         /**/
         /* addr of eval helper */
-        sprintf(buf,"(progn (defvar *_ev_perl_* (ffi:make-pointer #X%X :object)) (defun perl-ev (c) (si::call-cfun *_ev_perl_* :object  (list :object) (list c) ) )   () )",
-              _eval_perl_ob_);
+        sprintf(buf,"(progn (defvar *_ev_perl_* (ffi:make-pointer #X%X :object)) (defun perl-ev (c) (si::call-cfun *_ev_perl_* :object  (list :object) (list c) ) ) (defvar *_ev_perl_list_* (ffi:make-pointer #X%X :object)) (defun perl-ev-list (c) (si::call-cfun *_ev_perl_list_* :object  (list :object) (list c) ) )   () )",
+              _eval_perl_ob_,
+              _eval_perl_list_);
         def = c_string_to_object(buf);
 	res = si_safe_eval(3,def,Cnil,OBJNULL);
         /**/

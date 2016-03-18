@@ -59,4 +59,20 @@ is($cl->eval("(/ 3 4)").'', "#<RATIO 3/4>");
 is($cl->eval("3/4")->stringify,"#<RATIO 3/4>");
 is($cl->eval("3/4000000000000000000000000000000")->stringify,"#<RATIO 3/4000000000000000000000000000000>");
 
-# complex nums (TBD)
+# complex nums
+my $cx = $cl->eval("(complex 0 1)");
+my $lam1 = $cl->eval("(lambda (x y) (* x y))");
+ok($lam1->funcall($cx, $cx) == -1); # wow :)
+
+
+# other way round:
+
+my $lisplist = $cl->eval(<<'EOS');
+(progn
+  ()()() ()()()()
+  (perl-ev-list "qq/foo, bar, fluffy/ =~ /(\\w+)/g"))
+EOS
+
+#ok($lisplist.'' eq '#<LIST(3)');
+# TODO #ok($lisplist->item(1) eq 'bar');
+
